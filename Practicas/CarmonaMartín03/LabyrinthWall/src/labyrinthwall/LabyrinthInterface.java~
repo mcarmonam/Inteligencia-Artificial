@@ -1,0 +1,259 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package labyrinthwall;
+
+import java.util.Random;
+import java.util.Stack;
+import labyrinthwall.LabyrinthWall.Cell;
+import processing.core.PApplet;
+import processing.core.PFont;
+
+
+/**
+ *
+ * @author mcfly
+ */
+public class LabyrinthInterface extends PApplet {
+    PFont fuente;                    
+    Random rnd = new Random();       
+    Stack<Cell> path;                
+    LabyrinthWall mazze;                      
+    
+    //// PARAMETROS QUE SE PUEDEN MODIFICAR
+    int height = 25;                 // Alto en celdas del laberinto
+    int width = 25;                  // Ancho en celdas del laberinto
+    int pixelss =20;                  // Tamaño de la celda en pixeles
+    boolean generate = false;        // Bandera para solicitar el siguiente nivel.
+    boolean useMouseForStep = false; // A cada click del mouse que das da un paso
+    int xInit = rnd.nextInt(width);  // Posición inicial aleatoria en x
+    int yInit = rnd.nextInt(height); // Posición inicial aleatoria en y
+
+    
+    
+    int lwHeight = height*pixelss;  // La altura de la pantalla que contiene el laberinto
+    int lwwidth = width*pixelss;    // El ancho de la pantalla que contiene el laberinto
+    
+    
+    /**
+     * Inicializamos la ventana del tamaño correspondiente según el
+     * ancho y alto del laberinto y el tamaño en pixeles de cada celda
+     */
+    @Override
+    public void settings(){
+        size(lwwidth + 60 ,lwHeight + 60);
+    }
+
+    /**
+     * Inicializamos todo lo necesario para el programa
+     */
+   
+    public void setup(){
+        background(255);                       // Fondo blanco
+        mazze = new LabyrinthWall(width,height); // Inicializamos el laberinto
+        path  = new Stack<>();                 // Inicializamos el stack
+        mazze.matrix[xInit][yInit].visitada = true; // Marcamos como visitada a 
+                                                    // la celda inicio.
+        path.push(mazze.matrix[xInit][yInit]);      // Metemos la celda inicio
+                                                    // al stack del camino
+    }
+   
+    public void draw(){
+        // Dibujamos el laberinto
+        drawMaze();
+        
+        // Dibujamos el rectangulito de información
+        stroke(0);
+        fill(40);
+        rect(0, lwHeight, lwwidth-1, 50-1);
+
+        // Ahora ponemos la información
+        fill(255);
+        textFont(createFont("Arial",12,true),10);
+        text("Heigth: " + height, 5, (lwHeight) + 17);
+        text("Widht: " + width, 5, (lwHeight) + 34);
+
+        // Esta parte permite que el valor de useMouseForStep pueda hacer
+        // que a cada click se realice un paso del programa
+        if (!useMouseForStep || generate){
+            makeMaze();
+            generate = false;
+        }
+    }
+    
+    /** Indica que se desea seguir al siguiente nivel. */
+  
+    public void mouseClicked() {
+      generate = true;
+    }
+    
+    /**
+     * Metodo para dibujar el laberinto
+     */
+    private void drawMaze(){
+        // Dibmujamos el cuadrado que contiene todo
+        stroke(0);
+        fill(255);
+        rect(0, 0, lwwidth-1, lwHeight-1);
+        
+        // Dibujamos cada celda como la definimos en la clase 
+        for (int i = 0; i < width; i++){
+            for (int j = 0; j < height; j++){
+                drawCell(mazze.matrix[i][j]);
+            }
+        }
+    }
+    
+    /**
+     * Metodo que dibuja una celda en el laberinto
+     * @param c la celda a dibujar
+     */
+    private void drawCell(Cell c){
+        // Posición de la celda
+        int w = c.x;
+        int h = c.y;
+        // Componentes de color de las celdas que no están en el stack
+        int r = 255;
+        int g = 0;
+        int b = 0;
+        // Componentes de color de las celdas visitadas que aun estan en el stack
+        if (path.contains(c)) {
+            r = 0;
+            g = 0;
+            b = 255;
+        }
+        // Componentes de color cuando el laberinto está listo
+        else if (path.empty()){
+            r = 255;
+            g = 255;
+            b = 255;
+        }
+        // Colorear contenido de la celda visitada
+        if (c.visitada){
+            stroke(r,g,b);
+            fill(r,g,b);
+            rect((c.x*pixelss)+1,(c.y*pixelss)+1,pixelss-2,pixelss-2);
+        }
+        // Colorear la raya derecha de negro si la tiene
+        if (c.rigth){
+            stroke(0);
+            line(pixelss*(w+1),pixelss*h,pixelss*(w+1),pixelss*(h+1));
+        }
+        // Colorearla de su color correspondiente si no la tiene
+        else{
+            stroke(r,g,b);
+            line(pixelss*(w+1),(pixelss*h)+1,pixelss*(w+1),(pixelss*(h+1))-1);
+        }
+        // Colorear la raya de abajo de negro si la tiene
+        if (c.down){
+            stroke(0);
+            line(pixelss*w,pixelss*(h+1),pixelss*(w+1),pixelss*(h+1));
+        }
+        // Colorearla de su color correspondiente si no la tiene
+        else{
+            stroke(r,g,b);
+            line((pixelss*w)+1,pixelss*(h+1),(pixelss*(w+1))-1,pixelss*(h+1));
+        }
+    }
+    
+    /**
+     * Metodo que hace el laberinto
+     */
+    private void makeMaze(){
+        // Si aún hay celdas en la pila haz tu deber
+        if (!path.isEmpty()){
+            // Revisa si la celda en el tope tiene vecinos
+            Cell actual = path.peek();
+            Cell n = getNeib(actual);            
+            // Si sí tiene marca al vecino como visitado y metelo al stack
+            if (n != null){
+                n.visitada = true;
+                path.push(n);
+            }
+            // Si ya no tiene vecinos validos sacalo del stack
+            else {
+                path.pop();
+            }
+        }
+    }
+    
+    /**
+     * Metodo para obtener un vecino valido al asar al cual nos podamos
+     * mover.
+     * @param a celda de la cual se quiere obtener un vecino valido
+     * @return caracter u si el vecino es el de arriba,
+     * r si es el de la derecha,
+     * d si es el de abajo
+     * l si es el de la izquierda
+     */
+    private char getNeibAv(Cell a) {
+        int r = 0;
+        // Arreglo de letras correspndientes a algún vecino
+        char neibs[] = new char[5];
+        // si podemos ir arriba mete u en el arreglo
+        if ((a.y > 0) && !mazze.matrix[a.x][a.y - 1].visitada ){
+            neibs[r++] = 'u';
+        }
+        // si podemos ir a la derecha mete r en el arreglo
+        if ((a.x + 1 < width) && !mazze.matrix[a.x + 1][a.y].visitada ){
+            neibs[r++] = 'r';
+        }
+        // si podemos ir a abajro mete d en el arreglo
+        if (a.y + 1 < height && !mazze.matrix[a.x][a.y + 1].visitada ){
+            neibs[r++] ='d';
+        }
+        // si podemos ir a la izquierda mete i en el arreglo
+        if (a.x > 0 && !mazze.matrix[a.x - 1][a.y].visitada ){
+            neibs[r++] = 'l';
+        }
+        // si no podemos ir a ningun lugar regresa ' '
+        if (r == 0){
+            return ' ';
+        }
+        // si hubo vecinos validos regresa una letra correspondiente a uno de 
+        // ellos aleatoriamente
+        return neibs[rnd.nextInt(r)];
+    }
+    
+    /**
+     * Metodo que regresa un vecino valido de la celda actual
+     * @param c Celda de la cual se obtendra un vecino valido
+     * @return un vecino valido aleatoriamente escojido o null
+     * si no tiene vecinos validos
+     */
+    private Cell getNeib(Cell c) {
+        // usa metodo auxuliar para obtener el indice para saber quién es
+        // el vecino aleatorio disponible
+        char av = getNeibAv(c);
+        // escoje a el respectivo vecino y regresalo borrando la arista 
+        // que une a c con el vecino escojido
+        switch (av) {
+            case 'u':
+                mazze.matrix[c.x][c.y-1].down = false;
+                return mazze.matrix[c.x][c.y-1];
+            case 'r':
+                mazze.matrix[c.x][c.y].rigth = false;
+                return mazze.matrix[c.x+1][c.y];
+            case 'd':
+                mazze.matrix[c.x][c.y].down = false;
+                return mazze.matrix[c.x][c.y+1];
+            case 'l':
+                mazze.matrix[c.x-1][c.y].rigth = false;
+                return mazze.matrix[c.x-1][c.y];
+            default:
+                // si no hay vecino regresa null
+                return null;
+        }
+    }
+    
+    
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+	PApplet.main(new String[] { "labyrinthwall.LabyrinthInterface" });
+    }
+    
+}
