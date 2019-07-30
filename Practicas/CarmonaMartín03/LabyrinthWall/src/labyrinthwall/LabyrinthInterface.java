@@ -22,11 +22,11 @@ public class LabyrinthInterface extends PApplet {
     Stack<Cell> path;                
     LabyrinthWall mazze;                      
     
-    int height = 25;                 
-    int width = 25;                  
-    int pixelss =20;                 
+    int height = 20;                 
+    int width = 30;                  
+    int pixelss =15;                 
     boolean generate = false;        
-    boolean useMouseForStep = true; 
+    boolean useMouseForStep = false; 
     int xInit = rnd.nextInt(width);  
     int yInit = rnd.nextInt(height); 
 
@@ -40,7 +40,7 @@ public class LabyrinthInterface extends PApplet {
      */
     @Override
     public void settings(){
-        size(lwwidth,lwHeight + 60);
+        size(lwwidth+100,lwHeight + 100);
     }
 
     /**
